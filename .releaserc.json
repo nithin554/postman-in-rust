@@ -1,0 +1,46 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "parserOpts": {
+          "headerPattern": "/^(?:(\\w*)(?:\\((.*)\\))?: )?(.*)$/",
+          "headerCorrespondence": [
+            "type",
+            "scope",
+            "subject"
+          ]
+        },
+        "releaseRules": [
+          {
+            "type": "feat",
+            "release": "minor"
+          },
+          {
+            "type": "fix",
+            "release": "patch"
+          },
+          {
+            "type": null,
+            "release": "patch"
+          }
+        ]
+      }
+    ],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "release/**",
+            "label": "Tauri Build Assets"
+          }
+        ]
+      }
+    ]
+  ]
+}
