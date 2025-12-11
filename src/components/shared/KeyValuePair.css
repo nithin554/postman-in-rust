@@ -1,0 +1,43 @@
+.key-value-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.key-value-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.key-value-row input[type='text'] {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border-radius: 4px;
+}
+
+.key-value-row button {
+  background: none;
+  border: 1px solid #f44336;
+  color: #f44336;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.add-btn {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--accent-color);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}

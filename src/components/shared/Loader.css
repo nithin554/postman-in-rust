@@ -1,0 +1,15 @@
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  gap: 1rem;
+  background-color: var(--bg-color);
+}
+
+.timer {
+  font-size: 1.2rem;
+  color: #aaa;
+  font-family: monospace;
+}
