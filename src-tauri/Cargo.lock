@@ -2802,6 +2802,7 @@ dependencies = [
 name = "postman-in-rust"
 version = "0.1.0"
 dependencies = [
+ "http",
  "reqwest",
  "serde",
  "serde_json",

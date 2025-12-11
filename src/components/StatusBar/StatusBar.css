@@ -1,0 +1,11 @@
+.status-bar {
+    background-color: var(--sidebar-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 0.25rem 1rem;
+    text-align: center;
+    font-size: 0.8rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 10;
+}
