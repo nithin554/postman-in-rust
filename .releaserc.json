@@ -1,19 +1,35 @@
 {
-  "branches": ["main"],
+  "branches": [
+    "main"
+  ],
   "plugins": [
-    ["@semantic-release/commit-analyzer", {
-      "preset": "conventionalcommits",
-      "releaseRules": [
-        {"type": "feat", "release": "minor"},
-        {"type": "fix", "release": "patch"},
-        {"type": "*", "release": "patch"}
-      ]
-    }],
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          {
+            "type": "feat",
+            "release": "minor"
+          },
+          {
+            "type": "Merge",
+            "release": "patch"
+          }
+        ]
+      }
+    ],
     "@semantic-release/release-notes-generator",
-    ["@semantic-release/github", {
-      "assets": [
-        {"path": "release/**", "label": "Tauri Build Assets"}
-      ]
-    }]
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "release/**",
+            "label": "Tauri Build Assets"
+          }
+        ]
+      }
+    ]
   ]
 }
