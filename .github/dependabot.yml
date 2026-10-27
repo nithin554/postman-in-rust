@@ -5,7 +5,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "npm" # pnpm workspace at the repository root
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "cargo" # Tauri backend
+    directory: "/src-tauri"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "github-actions" # Workflows in .github/workflows
+    directory: "/"
     schedule:
       interval: "daily"
