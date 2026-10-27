@@ -51,11 +51,8 @@ jobs:
           path: ${{ steps.tauri-cache.outputs.path }}
           key: tauri-windows-${{ runner.os }}
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version 2.1.0 --locked
-
       - name: Build Tauri Windows App
-        run: cargo tauri build
+        run: pnpm tauri build
 
       - name: Upload Tauri Windows Build
         uses: actions/upload-artifact@v4
