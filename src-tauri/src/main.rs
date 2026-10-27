@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    postman_in_rust_lib::run()
+    courier_lib::run()
 }

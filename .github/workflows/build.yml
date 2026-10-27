@@ -43,19 +43,23 @@ jobs:
 
       - name: Get Tauri cache directory
         id: tauri-cache
-        run: echo "path=$(Join-Path $env:LOCALAPPDATA tauri)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8
+        run: |
+          # AppendAllText avoids the UTF-8 BOM that PS 5.1 Out-File adds,
+          # which would corrupt the value handed to actions/cache.
+          [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "path=$env:LOCALAPPDATA\tauri`n")
 
-      - name: Cache Tauri dependencies (NSIS)
+      - name: Cache Tauri bundler tools (NSIS/WiX)
         uses: actions/cache@v4
         with:
           path: ${{ steps.tauri-cache.outputs.path }}
-          key: tauri-windows-${{ runner.os }}
-
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version 2.1.0 --locked
+          # The bundler toolchain version is pinned by the Tauri CLI in
+          # pnpm-lock.yaml, so hash the lockfile to rotate stale caches.
+          key: tauri-windows-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            tauri-windows-${{ runner.os }}-
 
       - name: Build Tauri Windows App
-        run: cargo tauri build
+        run: pnpm tauri build
 
       - name: Upload Tauri Windows Build
         uses: actions/upload-artifact@v4
