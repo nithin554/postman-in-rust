@@ -1,20 +1,26 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "postman-in-rust",
+  "productName": "Courier",
   "version": "0.1.0",
-  "identifier": "com.nithin.postman-in-rust",
+  "identifier": "com.nithin.courier",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "title": "postman-in-rust",
-        "width": 800,
-        "height": 600
+        "title": "Courier — API Client",
+        "width": 1400,
+        "height": 880,
+        "minWidth": 960,
+        "minHeight": 620,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "visible": true
       }
     ],
     "security": {
@@ -24,6 +30,12 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "shortDescription": "A lightweight, beautiful API client.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
