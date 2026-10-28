@@ -31,15 +31,17 @@ jobs:
       - name: Install Node Dependencies
         run: pnpm install
 
-      - name: Build Node
-        run: pnpm build
-
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable-x86_64-pc-windows-msvc
-          override: true
-          profile: minimal
+
+      # Caches ~/.cargo/registry and src-tauri/target. The frontend is not built
+      # here: `pnpm tauri build` runs tauri.conf.json's beforeBuildCommand.
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
 
       - name: Get Tauri cache directory
         id: tauri-cache

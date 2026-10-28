@@ -36,9 +36,11 @@ serde_json = "1"
 base64 = "0.23"
 
 # A release profile tuned for a small, fast desktop binary.
+# Thin LTO + parallel codegen units keep CI build times reasonable; full LTO
+# with codegen-units = 1 serialized the whole dependency graph and cost minutes.
 [profile.release]
-codegen-units = 1
-lto = true
+codegen-units = 16
+lto = "thin"
 opt-level = "s"
 strip = true
 panic = "abort"
