@@ -58,7 +58,8 @@
 }
 
 .resize-handle:hover::after,
-.resize-handle[data-resize-handle-state='drag']::after {
+.resize-handle[data-separator='active']::after,
+.resize-handle[data-separator='focus']::after {
   inset: 4px calc(50% - 40px);
   background: var(--accent-line);
 }
