@@ -15,7 +15,10 @@ jobs:
     outputs:
       version: ${{ steps.next.outputs.version }}
     permissions:
-      contents: read
+      # semantic-release verifies it can push before it resolves anything, even
+      # in dry-run mode (`git push --dry-run`), so a read-only token fails with
+      # EGITNOPERMISSION. The dry run still writes no refs or tags.
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
