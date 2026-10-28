@@ -6,8 +6,49 @@ on:
       - main
 
 jobs:
+  # The executable has to report the version its release tag will carry, so the
+  # next version is resolved before anything is compiled. This dry run loads the
+  # same config, plugins and history as the release job and writes nothing.
+  version:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '25'
+          cache: 'pnpm'
+
+      - name: Install Node Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve Next Release Version
+        id: next
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/next-version.mjs
+
   build-windows:
     runs-on: windows-latest
+    # Pull requests skip the version job. Naming only the results would let the
+    # implicit success() check skip this job too, so a status function is
+    # required to keep building when `version` was skipped.
+    needs: version
+    if: ${{ !cancelled() && needs.version.result != 'failure' }}
     defaults:
       run:
         shell: powershell
@@ -60,6 +101,13 @@ jobs:
           restore-keys: |
             tauri-windows-${{ runner.os }}-
 
+      - name: Stamp Release Version
+        if: needs.version.outputs.version != ''
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ needs.version.outputs.version }}
+        run: ./scripts/set-app-version.ps1 -Version $env:APP_VERSION
+
       - name: Build Tauri Windows App
         run: pnpm tauri build
 
@@ -72,10 +120,20 @@ jobs:
             src-tauri/target/release/bundle/nsis/*
             src-tauri/target/release/bundle/windows/*
 
+      - name: Upload Tauri Windows Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: courier-windows-exe
+          path: src-tauri/target/release/courier.exe
+          if-no-files-found: error
+
   release:
     runs-on: ubuntu-latest
     needs: build-windows
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      published: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
     permissions:
       contents: write
       issues: write
@@ -108,6 +166,39 @@ jobs:
           path: release/
 
       - name: Semantic Release
+        id: semantic
         uses: cycjimmy/semantic-release-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-nuget:
+    runs-on: windows-latest
+    needs: [version, release]
+    if: needs.release.outputs.published == 'true'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download Windows Executable
+        uses: actions/download-artifact@v8
+        with:
+          name: courier-windows-exe
+          path: nuget-payload
+
+      - name: Publish NuGet Package
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The executable was stamped with this version during the build, so
+          # the package version comes from the same place.
+          PACKAGE_VERSION: ${{ needs.version.outputs.version || needs.release.outputs.version }}
+        run: |
+          ./scripts/publish-nuget.ps1 `
+            -ExePath nuget-payload/courier.exe `
+            -Version $env:PACKAGE_VERSION `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
+            -ApiKey $env:GITHUB_TOKEN `
+            -SkipDuplicate

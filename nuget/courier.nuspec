@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Courier</id>
+    <version>$version$</version>
+    <title>Courier</title>
+    <authors>Nithin</authors>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/nithin554/postman-in-rust</projectUrl>
+    <repository type="git" url="https://github.com/nithin554/postman-in-rust" />
+    <readme>README.md</readme>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <developmentDependency>false</developmentDependency>
+    <summary>A lightweight, beautiful API client.</summary>
+    <description>Courier is a lightweight, fast API client built with Rust (Tauri 2) and React. This package ships the standalone Windows x64 executable under tools/windows-x64 so it can be fetched with standard NuGet tooling.</description>
+    <tags>api-client postman http rest tauri rust</tags>
+  </metadata>
+  <files>
+    <file src="tools\windows-x64\courier.exe" target="tools\windows-x64" />
+    <file src="LICENSE" />
+    <file src="README.md" />
+  </files>
+</package>
