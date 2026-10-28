@@ -273,10 +273,11 @@ export async function copyText(text: string): Promise<boolean> {
 
 export function downloadBlob(
   filename: string,
-  contents: BlobPart,
+  contents: BlobPart | Uint8Array,
   type: string,
 ): void {
-  const blob = new Blob([contents], { type });
+  const part = contents instanceof Uint8Array ? new Uint8Array(contents) : contents;
+  const blob = new Blob([part], { type });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
