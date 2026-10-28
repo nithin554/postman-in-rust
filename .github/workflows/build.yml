@@ -56,7 +56,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -77,12 +77,28 @@ jobs:
         with:
           toolchain: stable-x86_64-pc-windows-msvc
 
+      # lld links the Tauri binary considerably faster than link.exe. LLVM ships
+      # with the windows-latest image; kept CI-only so local builds are
+      # unaffected, and skipped if lld-link is ever missing from PATH.
+      - name: Configure fast linker
+        run: |
+          if (Get-Command lld-link -ErrorAction SilentlyContinue) {
+            # AppendAllText avoids the UTF-8 BOM that PS 5.1 Out-File adds,
+            # which would corrupt the value for the steps below.
+            [IO.File]::AppendAllText($env:GITHUB_ENV, "RUSTFLAGS=-C linker=lld-link`n")
+          } else {
+            Write-Host "lld-link not found, falling back to the default linker"
+          }
+
       # Caches ~/.cargo/registry and src-tauri/target. The frontend is not built
       # here: `pnpm tauri build` runs tauri.conf.json's beforeBuildCommand.
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+          # RUSTFLAGS is part of the cache key, so changing the linker starts a
+          # fresh cache instead of restoring artifacts that would be rebuilt.
+          env-vars: RUSTFLAGS
 
       - name: Get Tauri cache directory
         id: tauri-cache
@@ -110,6 +126,12 @@ jobs:
 
       - name: Build Tauri Windows App
         run: pnpm tauri build
+        env:
+          # Saves the ~19s `Updating crates.io index` on every cached run. Left
+          # off on a cache miss so new or updated dependencies can be fetched.
+          # Compared explicitly: cargo rejects an empty CARGO_NET_OFFLINE, and
+          # the output is unset rather than "false" when nothing is restored.
+          CARGO_NET_OFFLINE: ${{ steps.rust-cache.outputs.cache-hit == 'true' }}
 
       - name: Upload Tauri Windows Build
         uses: actions/upload-artifact@v4

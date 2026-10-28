@@ -39,11 +39,12 @@ serde_json = "1"
 base64 = "0.23"
 
 # A release profile tuned for a small, fast desktop binary.
-# Thin LTO + parallel codegen units keep CI build times reasonable; full LTO
-# with codegen-units = 1 serialized the whole dependency graph and cost minutes.
+# LTO is off on purpose: the frontend bundle is embedded into the app crate, so
+# the crate is relinked on every CI run, and ThinLTO dominated that relink
+# (~117s of a ~140s cargo phase). Without it the relink is a plain COFF link.
 [profile.release]
 codegen-units = 16
-lto = "thin"
+lto = false
 opt-level = "s"
 strip = true
 panic = "abort"
