@@ -96,6 +96,7 @@ jobs:
       # Caches ~/.cargo/registry and src-tauri/target. The frontend is not built
       # here: `pnpm tauri build` runs tauri.conf.json's beforeBuildCommand.
       - name: Cache Rust artifacts
+        id: rust-cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
