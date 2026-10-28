@@ -12,7 +12,10 @@ edition = "2021"
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "courier_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# Desktop-only build. `staticlib` and `cdylib` exist for Tauri's mobile targets;
+# here they only produced two extra LTO links of the whole dependency graph on
+# every CI run. Re-add them if iOS/Android support is introduced.
+crate-type = ["rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
