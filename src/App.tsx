@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { ActivityRail } from './components/ActivityRail';
 import { RequestBar } from './components/RequestBar';
 import { RequestEditor } from './components/RequestEditor';
@@ -49,6 +49,7 @@ function AppShell() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const mainSplit = useDefaultLayout({ id: 'courier-main-split' });
 
   const latest = useRef({ state, actions, activeTab, settingsOpen, saveOpen, paletteOpen });
   latest.current = { state, actions, activeTab, settingsOpen, saveOpen, paletteOpen };
@@ -171,15 +172,20 @@ function AppShell() {
         <RequestBar onOpenSave={() => setSaveOpen(true)} />
 
         <div className="work-area">
-          <PanelGroup direction="vertical" autoSaveId="courier-main-split" className="pane-group">
-            <Panel defaultSize={46} minSize={22} className="pane">
+          <Group
+            orientation="vertical"
+            defaultLayout={mainSplit.defaultLayout}
+            onLayoutChanged={mainSplit.onLayoutChanged}
+            className="pane-group"
+          >
+            <Panel id="request" defaultSize="46%" minSize="22%" className="pane">
               <RequestEditor />
             </Panel>
-            <PanelResizeHandle className="resize-handle" />
-            <Panel defaultSize={54} minSize={18} className="pane">
+            <Separator className="resize-handle" />
+            <Panel id="response" defaultSize="54%" minSize="18%" className="pane">
               <ResponsePanel />
             </Panel>
-          </PanelGroup>
+          </Group>
         </div>
 
         <StatusBar />
