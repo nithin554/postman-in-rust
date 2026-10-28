@@ -58,6 +58,44 @@ Because the webview is provided by the OS and the Rust binary is built with LTO,
 stripped symbols and `panic = "abort"`, the installed footprint is a fraction of an Electron-based
 client.
 
+## NuGet package
+
+Every release also publishes the standalone Windows executable to
+[GitHub Packages](https://github.com/nithin554/postman-in-rust/packages) as the NuGet package
+`Courier`, so it can be pulled with standard NuGet tooling instead of a browser download.
+
+Authenticate once against the feed, then install:
+
+```bash
+dotnet nuget add source \
+  --username <your-github-username> \
+  --password <personal-access-token-with-read:packages> \
+  --store-password-in-clear-text \
+  --name github "https://nuget.pkg.github.com/nithin554/index.json"
+
+nuget install Courier -Source github -OutputDirectory tools
+```
+
+The package unpacks to:
+
+| Path                            | Contents                          |
+| ------------------------------- | --------------------------------- |
+| `tools/windows-x64/courier.exe` | Standalone Windows x64 executable |
+| `LICENSE`, `README.md`          | License and project readme        |
+
+Publishing is handled by the `publish-nuget` job in
+[`.github/workflows/build.yml`](.github/workflows/build.yml), which packs the executable built by
+the Windows job and stamps it with the version semantic-release just published. To build a package
+locally:
+
+```powershell
+./scripts/publish-nuget.ps1 -ExePath src-tauri/target/release/courier.exe -Version 0.1.0
+```
+
+Add `-Source https://nuget.pkg.github.com/nithin554/index.json` to push it; the API key defaults to
+`GITHUB_TOKEN`. The script downloads the pinned NuGet CLI into `artifacts/tools` the first time it
+runs.
+
 ## Keyboard shortcuts
 
 | Action              | Shortcut       |

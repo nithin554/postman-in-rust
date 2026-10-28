@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# NuGet packaging output
+/artifacts/
+*.nupkg
+
 # Editor directories and files
 .vscode/extensions.json
 !.vscode/extensions.json
