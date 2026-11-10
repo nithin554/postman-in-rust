@@ -12,7 +12,7 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 export type BodyMode = 'none' | 'json' | 'text' | 'urlencoded' | 'formdata';
 
-export type AuthType = 'none' | 'bearer' | 'basic' | 'apikey';
+export type AuthType = 'none' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
 
 export type AccentId = 'ember' | 'violet' | 'teal' | 'rose' | 'azure';
 
@@ -39,6 +39,10 @@ export interface AuthConfig {
   key: string;
   value: string;
   addTo: 'header' | 'query';
+  tokenUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
+  scope?: string;
 }
 
 export interface RequestSpec {
@@ -50,6 +54,8 @@ export interface RequestSpec {
   body: string;
   formFields: KeyValue[];
   auth: AuthConfig;
+  preRequestScript?: string;
+  testScript?: string;
 }
 
 export interface SavedRef {
@@ -127,6 +133,18 @@ export interface WorkspaceFile {
   session: SessionState;
 }
 
+export interface TestResult {
+  name: string;
+  passed: boolean;
+  error?: string;
+}
+
+export interface TestReport {
+  results: TestResult[];
+  logs: string[];
+  at: number;
+}
+
 export interface TabState {
   id: string;
   name: string;
@@ -137,6 +155,7 @@ export interface TabState {
   startedAt: number | null;
   response: HttpResponse | null;
   error: string | null;
+  tests: TestReport | null;
 }
 
 export interface ResponseHeader {
@@ -195,7 +214,7 @@ export interface PreparedRequest {
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
-  accent: 'ember',
+  accent: 'azure',
   fontSize: 'comfortable',
   timeoutMs: 30_000,
   followRedirects: true,
@@ -213,4 +232,8 @@ export const DEFAULT_AUTH: AuthConfig = {
   key: '',
   value: '',
   addTo: 'header',
+  tokenUrl: '',
+  clientId: '',
+  clientSecret: '',
+  scope: '',
 };
