@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   DEFAULT_AUTH,
   type AuthConfig,
@@ -9,22 +9,22 @@ import {
 } from '../types';
 import { useStore } from '../state/store';
 import { useToast } from '../state/toasts';
-import { buildUrlPreview, prepareRequest } from '../lib/request';
-import { buildSnippet, SNIPPET_LANGUAGES, type SnippetLanguage } from '../lib/snippet';
-import { Code } from '../lib/highlight';
-import { copyText, cx, formatBytes, prettyJson, uid } from '../lib/utils';
+import { buildUrlPreview } from '../lib/request';
+import { codeEditorKeyDown } from '../lib/codeEditor';
+import { cx, formatBytes, prettyJson, uid } from '../lib/utils';
 import { Button, IconButton } from './ui/primitives';
+import { CodeEditor } from './ui/CodeEditor';
 import { Icon } from './ui/Icon';
 import { KeyValueRows } from './ui/KeyValueRows';
 
-type EditorTab = 'params' | 'headers' | 'body' | 'auth' | 'code';
+type EditorTab = 'params' | 'headers' | 'body' | 'auth' | 'scripts';
 
 const TABS: { id: EditorTab; label: string }[] = [
   { id: 'params', label: 'Params' },
   { id: 'headers', label: 'Headers' },
   { id: 'body', label: 'Body' },
   { id: 'auth', label: 'Auth' },
-  { id: 'code', label: 'Code' },
+  { id: 'scripts', label: 'Scripts' },
 ];
 
 const BODY_MODES: { id: BodyMode; label: string }[] = [
@@ -40,6 +40,7 @@ const AUTH_TYPES: { id: AuthType; label: string }[] = [
   { id: 'bearer', label: 'Bearer token' },
   { id: 'basic', label: 'Basic auth' },
   { id: 'apikey', label: 'API key' },
+  { id: 'oauth2', label: 'OAuth 2' },
 ];
 
 const HEADER_SUGGESTIONS: { key: string; value: string; label: string }[] = [
@@ -53,20 +54,13 @@ function countEnabled(rows: KeyValue[]): number {
 }
 
 export function RequestEditor() {
-  const { state, actions, activeTab, activeEnvironment } = useStore();
+  const { actions, activeTab, activeEnvironment } = useStore();
   const { notify } = useToast();
   const [tab, setTab] = useState<EditorTab>('params');
-  const [language, setLanguage] = useState<SnippetLanguage>('curl');
   const [revealToken, setRevealToken] = useState(false);
 
   const draft = activeTab?.draft;
   const auth = draft?.auth ?? DEFAULT_AUTH;
-
-  const snippet = useMemo(() => {
-    if (!draft) return '';
-    const prepared = prepareRequest(draft, activeEnvironment, state.settings, 'snippet');
-    return buildSnippet(language, prepared);
-  }, [draft, activeEnvironment, state.settings, language]);
 
   if (!activeTab || !draft) {
     return (
@@ -134,6 +128,12 @@ export function RequestEditor() {
           if (item.id === 'headers' && headersCount > 0) badge = String(headersCount);
           if (item.id === 'body' && draft.bodyMode !== 'none') badge = draft.bodyMode;
           if (item.id === 'auth' && auth.type !== 'none') badge = auth.type;
+          if (
+            item.id === 'scripts' &&
+            (draft.preRequestScript?.trim() || draft.testScript?.trim())
+          ) {
+            badge = 'JS';
+          }
           return (
             <button
               key={item.id}
@@ -250,17 +250,25 @@ export function RequestEditor() {
                     ) : null}
                   </div>
                 </div>
-                <textarea
-                  className="code-textarea"
-                  value={draft.body}
-                  spellCheck={false}
-                  placeholder={
-                    draft.bodyMode === 'json'
-                      ? '{\n  "hello": "world"\n}'
-                      : 'Plain text request body'
-                  }
-                  onChange={(event) => patch({ body: event.target.value })}
-                />
+                {draft.bodyMode === 'json' ? (
+                  <CodeEditor
+                    value={draft.body}
+                    language="json"
+                    placeholder={'{\n  "hello": "world"\n}'}
+                    ariaLabel="JSON request body"
+                    onChange={(body) => patch({ body })}
+                    onKeyDown={codeEditorKeyDown}
+                  />
+                ) : (
+                  <textarea
+                    className="code-textarea"
+                    value={draft.body}
+                    spellCheck={false}
+                    placeholder="Plain text request body"
+                    onChange={(event) => patch({ body: event.target.value })}
+                    onKeyDown={codeEditorKeyDown}
+                  />
+                )}
                 {jsonError ? <div className="body-error">{jsonError}</div> : null}
               </div>
             ) : null}
@@ -411,46 +419,109 @@ export function RequestEditor() {
                 </div>
               </div>
             ) : null}
+
+            {auth.type === 'oauth2' ? (
+              <div className="auth-fields">
+                <label className="field">
+                  <span className="field-label">Token URL</span>
+                  <span className="text-input">
+                    <input
+                      value={auth.tokenUrl ?? ''}
+                      placeholder="https://example.com/oauth/token"
+                      spellCheck={false}
+                      autoComplete="off"
+                      onChange={(event) => patchAuth({ tokenUrl: event.target.value })}
+                    />
+                  </span>
+                </label>
+                <label className="field">
+                  <span className="field-label">Client ID</span>
+                  <span className="text-input">
+                    <input
+                      value={auth.clientId ?? ''}
+                      placeholder="{{clientId}}"
+                      spellCheck={false}
+                      autoComplete="off"
+                      onChange={(event) => patchAuth({ clientId: event.target.value })}
+                    />
+                  </span>
+                </label>
+                <label className="field">
+                  <span className="field-label">Client secret</span>
+                  <span className="text-input">
+                    <input
+                      type="password"
+                      value={auth.clientSecret ?? ''}
+                      placeholder="{{clientSecret}}"
+                      spellCheck={false}
+                      autoComplete="off"
+                      onChange={(event) => patchAuth({ clientSecret: event.target.value })}
+                    />
+                  </span>
+                </label>
+                <label className="field">
+                  <span className="field-label">Scope</span>
+                  <span className="text-input">
+                    <input
+                      value={auth.scope ?? ''}
+                      placeholder="optional, e.g. read write"
+                      spellCheck={false}
+                      autoComplete="off"
+                      onChange={(event) => patchAuth({ scope: event.target.value })}
+                    />
+                  </span>
+                </label>
+                <div className="editor-note">
+                  <Icon name="lock" size={15} />
+                  <div>
+                    <strong>OAuth 2 client credentials</strong>
+                    <p>
+                      Courier fetches the token on send, caches it until shortly before expiry,
+                      and sends it as <code>Authorization: Bearer …</code>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        {tab === 'code' ? (
-          <div className="editor-section code-section">
-            <div className="code-toolbar">
-              <div className="segmented segmented-sm">
-                {SNIPPET_LANGUAGES.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={cx('segmented-item', language === item.id && 'is-active')}
-                    onClick={() => setLanguage(item.id)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                icon="copy"
-                onClick={() => {
-                  void copyText(snippet).then((copied) =>
-                    notify({
-                      title: copied ? 'Snippet copied' : 'Could not copy',
-                      tone: copied ? 'success' : 'error',
-                    }),
-                  );
-                }}
-              >
-                Copy
-              </Button>
-            </div>
-            <div className="code-scroll">
-              <Code code={snippet} language={language} wrap />
-            </div>
-            <p className="form-note">
-              Snippets resolve variables using the active environment and include auth and headers.
-            </p>
+        {tab === 'scripts' ? (
+          <div className="editor-section scripts-section">
+            <label className="field">
+              <span className="field-label">Pre-request script</span>
+              <span className="field-hint">
+                Runs before sending. Use <code>pm.environment.set(&quot;name&quot;, &quot;value&quot;)</code> to
+                update the active environment.
+              </span>
+              <CodeEditor
+                value={draft.preRequestScript ?? ''}
+                language="javascript"
+                className="script-code-editor"
+                placeholder={'// runs before the request is sent\npm.environment.set("ts", Date.now())'}
+                ariaLabel="Pre-request script"
+                minRows={6}
+                onChange={(code) => patch({ preRequestScript: code })}
+                onKeyDown={codeEditorKeyDown}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Tests</span>
+              <span className="field-hint">
+                Runs after the response arrives. Use <code>pm.test()</code>,{' '}
+                <code>pm.expect()</code>, and <code>pm.response</code>.
+              </span>
+              <CodeEditor
+                value={draft.testScript ?? ''}
+                language="javascript"
+                className="script-code-editor"
+                placeholder={'pm.test("status is 200", () => {\n  pm.expect(pm.response.code).to.equal(200);\n});'}
+                ariaLabel="Test script"
+                minRows={6}
+                onChange={(code) => patch({ testScript: code })}
+                onKeyDown={codeEditorKeyDown}
+              />
+            </label>
           </div>
         ) : null}
       </div>

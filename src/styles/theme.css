@@ -9,11 +9,12 @@
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Consolas', ui-monospace,
     monospace;
 
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  /* Postman scale — small radii on controls, modest on surfaces */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-pill: 999px;
 
   --rail-w: 56px;
@@ -30,25 +31,25 @@
   --fast: 120ms;
   --normal: 180ms;
 
-  /* Dark theme (default) */
-  --bg: #0a0c11;
-  --bg-deep: #06080c;
-  --panel: #0e1117;
-  --surface: #12161e;
-  --surface-2: #171c26;
-  --surface-3: #1e2431;
-  --surface-glass: rgba(18, 22, 30, 0.78);
-  --rail-bg: #07090d;
-  --sidebar-bg: #0b0e14;
+  /* Dark theme (default) — Postman dark palette */
+  --bg: #1c1e25;
+  --bg-deep: #15171d;
+  --panel: #1a1c23;
+  --surface: #232631;
+  --surface-2: #2a2d3a;
+  --surface-3: #343847;
+  --surface-glass: rgba(28, 30, 37, 0.78);
+  --rail-bg: #111319;
+  --sidebar-bg: #1a1c22;
 
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.13);
-  --border-soft: rgba(255, 255, 255, 0.04);
-  --overlay: rgba(3, 5, 9, 0.62);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-soft: rgba(255, 255, 255, 0.05);
+  --overlay: rgba(10, 12, 16, 0.62);
 
-  --text: #e9edf5;
-  --text-muted: #97a1b3;
-  --text-subtle: #667085;
+  --text: #dddddd;
+  --text-muted: #9a9ea8;
+  --text-subtle: #6b7079;
   --text-inverse: #0b0d12;
 
   --success: #34d399;
@@ -60,11 +61,12 @@
   --info: #60a5fa;
   --info-soft: rgba(96, 165, 250, 0.13);
 
-  --m-get: #4ade80;
-  --m-post: #fbbf24;
-  --m-put: #60a5fa;
-  --m-patch: #c084fc;
-  --m-delete: #fb7185;
+  /* Postman method badge colors */
+  --m-get: #38c793;
+  --m-post: #f5a623;
+  --m-put: #ff8a3d;
+  --m-patch: #e9a944;
+  --m-delete: #ee5253;
   --m-head: #94a3b8;
   --m-options: #2dd4bf;
 
@@ -72,18 +74,18 @@
   --shadow-md: 0 8px 24px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.25);
   --shadow-lg: 0 28px 70px -24px rgba(0, 0, 0, 0.85), 0 10px 28px rgba(0, 0, 0, 0.35);
 
-  --accent: #ff8a3d;
-  --accent-2: #ffc46b;
-  --accent-contrast: #1a0d05;
+  --accent: #ff6c37;
+  --accent-2: #ff9d70;
+  --accent-contrast: #ffffff;
   --accent-soft: color-mix(in srgb, var(--accent) 15%, transparent);
   --accent-line: color-mix(in srgb, var(--accent) 42%, transparent);
   --accent-glow: color-mix(in srgb, var(--accent) 34%, transparent);
 }
 
 [data-accent='ember'] {
-  --accent: #ff8a3d;
-  --accent-2: #ffc46b;
-  --accent-contrast: #1c0e04;
+  --accent: #ff6c37;
+  --accent-2: #ff9d70;
+  --accent-contrast: #ffffff;
 }
 
 [data-accent='violet'] {
@@ -105,30 +107,30 @@
 }
 
 [data-accent='azure'] {
-  --accent: #60a5fa;
-  --accent-2: #a78bfa;
-  --accent-contrast: #06162b;
+  --accent: #3a82e6;
+  --accent-2: #5c9bf0;
+  --accent-contrast: #ffffff;
 }
 
 [data-theme='light'] {
-  --bg: #eef0f5;
-  --bg-deep: #e4e7ee;
+  --bg: #f5f6f8;
+  --bg-deep: #e9eaee;
   --panel: #ffffff;
-  --surface: #fbfbfd;
-  --surface-2: #f2f4f8;
-  --surface-3: #e8ebf2;
+  --surface: #fdfdfe;
+  --surface-2: #f0f1f4;
+  --surface-3: #e6e8ee;
   --surface-glass: rgba(255, 255, 255, 0.82);
-  --rail-bg: #e9ebf1;
-  --sidebar-bg: #f7f8fb;
+  --rail-bg: #e9ebef;
+  --sidebar-bg: #f7f7f9;
 
-  --border: rgba(15, 23, 42, 0.09);
-  --border-strong: rgba(15, 23, 42, 0.17);
-  --border-soft: rgba(15, 23, 42, 0.05);
+  --border: rgba(20, 24, 33, 0.1);
+  --border-strong: rgba(20, 24, 33, 0.18);
+  --border-soft: rgba(20, 24, 33, 0.06);
   --overlay: rgba(18, 24, 38, 0.34);
 
-  --text: #17202f;
-  --text-muted: #5d6a7e;
-  --text-subtle: #8a95a8;
+  --text: #21242b;
+  --text-muted: #5d6470;
+  --text-subtle: #8a909c;
   --text-inverse: #ffffff;
 
   --success: #0f9d6e;
@@ -140,10 +142,10 @@
   --info: #2563eb;
   --info-soft: rgba(37, 99, 235, 0.1);
 
-  --m-get: #15803d;
+  --m-get: #00946d;
   --m-post: #b45309;
-  --m-put: #1d4ed8;
-  --m-patch: #7e22ce;
+  --m-put: #cc5a17;
+  --m-patch: #8a6914;
   --m-delete: #dc2626;
   --m-head: #64748b;
   --m-options: #0f766e;
@@ -300,6 +302,17 @@ pre {
   from {
     opacity: 0;
     transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;

@@ -27,6 +27,7 @@ fn yes() -> bool {
 pub struct AppState {
     cancellations: Mutex<HashMap<String, oneshot::Sender<()>>>,
     cookies: Mutex<Arc<reqwest::cookie::Jar>>,
+    oauth_tokens: Mutex<HashMap<String, (String, Instant)>>,
 }
 
 impl AppState {
@@ -34,6 +35,7 @@ impl AppState {
         Self {
             cancellations: Mutex::new(HashMap::new()),
             cookies: Mutex::new(Arc::new(reqwest::cookie::Jar::default())),
+            oauth_tokens: Mutex::new(HashMap::new()),
         }
     }
 }
@@ -384,6 +386,94 @@ fn clear_cookies(state: State<'_, AppState>) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Oauth2Input {
+    pub token_url: String,
+    pub client_id: String,
+    pub client_secret: String,
+    #[serde(default)]
+    pub scope: Option<String>,
+}
+
+/// Fetch and cache an OAuth 2 client-credentials access token.
+/// Tokens are cached per client config and refreshed 30s before expiry.
+#[tauri::command]
+async fn oauth2_token(
+    state: State<'_, AppState>,
+    input: Oauth2Input,
+) -> Result<String, String> {
+    let cache_key = format!(
+        "{}\u{1}{}\u{1}{}\u{1}{}",
+        input.token_url,
+        input.client_id,
+        input.client_secret,
+        input.scope.clone().unwrap_or_default()
+    );
+
+    if let Ok(tokens) = state.oauth_tokens.lock() {
+        if let Some((token, fetched_at)) = tokens.get(&cache_key) {
+            // Keep tokens for at most 55 minutes; most servers use 3600s expiry.
+            if fetched_at.elapsed().as_secs() < 55 * 60 {
+                return Ok(token.clone());
+            }
+        }
+    }
+
+    let mut form = reqwest::multipart::Form::new()
+        .text("grant_type", "client_credentials");
+    if let Some(scope) = input
+        .scope
+        .as_deref()
+        .map(str::trim)
+        .filter(|scope| !scope.is_empty())
+        .map(str::to_string)
+    {
+        form = form.text("scope", scope);
+    }
+
+    let client = Client::builder()
+        .user_agent(concat!("Courier/", env!("CARGO_PKG_VERSION")))
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|error| format!("Could not initialize the HTTP client: {error}"))?;
+
+    let response = client
+        .request(Method::POST, input.token_url.trim())
+        .basic_auth(input.client_id.trim(), Some(input.client_secret.trim()))
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|error| describe_error("The token request failed", &error))?;
+
+    let status = response.status();
+    let body = response
+        .text()
+        .await
+        .map_err(|error| format!("Could not read the token response: {error}"))?;
+
+    if !status.is_success() {
+        return Err(format!(
+            "The token endpoint returned {status}: {}",
+            body.chars().take(300).collect::<String>()
+        ));
+    }
+
+    let json: serde_json::Value = serde_json::from_str(&body)
+        .map_err(|_| "The token response is not valid JSON.".to_string())?;
+    let token = json
+        .get("access_token")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| "The token response has no access_token field.".to_string())?
+        .to_string();
+
+    if let Ok(mut tokens) = state.oauth_tokens.lock() {
+        tokens.insert(cache_key, (token.clone(), Instant::now()));
+    }
+
+    Ok(token)
+}
+
 fn workspace_path(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
@@ -519,6 +609,7 @@ pub fn run() {
             send_request,
             cancel_request,
             clear_cookies,
+            oauth2_token,
             load_workspace,
             save_workspace,
             import_json_file,
