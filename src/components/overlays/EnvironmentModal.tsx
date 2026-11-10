@@ -48,10 +48,17 @@ export function EnvironmentModal({
 
   const remove = () => {
     if (!environment) return;
-    if (!window.confirm(`Delete the “${environment.name}” environment?`)) return;
-    actions.deleteEnvironment(environment.id);
-    notify({ title: 'Environment deleted', tone: 'info' });
-    onClose();
+    actions.showConfirm({
+      title: 'Delete environment?',
+      tone: 'danger',
+      confirmLabel: 'Delete',
+      message: `The environment “${environment.name}” and its variables will be removed. Requests that use {{variables}} from it will stop resolving. This cannot be undone.`,
+      onConfirm: () => {
+        actions.deleteEnvironment(environment.id);
+        notify({ title: 'Environment deleted', tone: 'info' });
+        onClose();
+      },
+    });
   };
 
   return (

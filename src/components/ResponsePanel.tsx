@@ -61,6 +61,7 @@ export function ResponsePanel() {
   const response = activeTab?.response ?? null;
   const error = activeTab?.error ?? null;
   const sending = activeTab?.sending ?? false;
+  const tests = activeTab?.tests ?? null;
   const elapsed = useElapsed(activeTab?.startedAt ?? null, sending);
 
   useEffect(() => {
@@ -191,6 +192,32 @@ export function ResponsePanel() {
 
   return (
     <section className="response">
+      {tests && (tests.results.length > 0 || tests.logs.length > 0) ? (
+        <div className="test-results">
+          <div className="test-results-head">
+            <span className="test-results-title">
+              {tests.results.filter((t) => t.passed).length}/{tests.results.length} tests passed
+            </span>
+            <span className="test-results-time">{formatMs(Date.now() - tests.at)} ago</span>
+          </div>
+          {tests.results.map((result, index) => (
+            <div
+              key={`${result.name}-${index}`}
+              className={cx('test-row', result.passed ? 'is-pass' : 'is-fail')}
+            >
+              <span className="test-row-mark">{result.passed ? 'PASS' : 'FAIL'}</span>
+              <span className="test-row-name">{result.name}</span>
+              {result.error ? <span className="test-row-error">{result.error}</span> : null}
+            </div>
+          ))}
+          {tests.logs.map((line, index) => (
+            <div key={`log-${index}`} className="test-log">
+              {'> '}
+              {line}
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="response-bar">
         <div className="response-status">
           <span className={cx('status-pill', `tone-${tone}`)}>

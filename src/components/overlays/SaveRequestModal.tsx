@@ -5,7 +5,7 @@ import { deriveRequestName } from '../../lib/utils';
 import { useStore } from '../../state/store';
 import { useToast } from '../../state/toasts';
 import { Button, Field, IconButton, Modal, TextInput } from '../ui/primitives';
-import { Icon } from '../ui/Icon';
+import { Select } from '../ui/Select';
 
 interface SaveRequestModalProps {
   open: boolean;
@@ -113,7 +113,9 @@ export function SaveRequestModal({ open, tab, onClose }: SaveRequestModalProps) 
       width={540}
       footer={
         <div className="modal-footer-split">
-          <span className="muted small">{overwriteId ? 'Updating the saved request' : 'Creates a new request'}</span>
+          <span className="muted small">
+            {overwriteId ? 'Updating the existing saved request.' : 'Saving creates a new request in this collection.'}
+          </span>
           <div className="modal-footer-actions">
             <Button variant="ghost" onClick={onClose}>
               Cancel
@@ -167,22 +169,15 @@ export function SaveRequestModal({ open, tab, onClose }: SaveRequestModalProps) 
             </div>
           ) : (
             <div className="inline-create">
-              <div className="select-wrap">
-                <select
-                  value={collectionId ?? ''}
-                  onChange={(event) => {
-                    setCollectionId(event.target.value || null);
-                    setParentId(null);
-                  }}
-                >
-                  {state.collections.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-                <Icon name="chevron-down" size={13} />
-              </div>
+              <Select
+                ariaLabel="Collection"
+                value={collectionId ?? ''}
+                options={state.collections.map((item) => ({ value: item.id, label: item.name }))}
+                onChange={(next) => {
+                  setCollectionId(next || null);
+                  setParentId(null);
+                }}
+              />
               <Button size="sm" variant="default" icon="plus" onClick={() => setCreatingCollection(true)}>
                 New
               </Button>
@@ -192,21 +187,20 @@ export function SaveRequestModal({ open, tab, onClose }: SaveRequestModalProps) 
 
         {collection ? (
           <Field label="Folder" hint={folders.length === 0 ? 'This collection has no folders yet.' : undefined}>
-            <div className="select-wrap">
-              <select
-                value={parentId ?? ''}
-                onChange={(event) => setParentId(event.target.value || null)}
-                disabled={folders.length === 0}
-              >
-                <option value="">Top level</option>
-                {folders.map((folder) => (
-                  <option key={folder.id} value={folder.id}>
-                    {`${'  '.repeat(folder.depth)}${folder.depth > 0 ? '└ ' : ''}${folder.label}`}
-                  </option>
-                ))}
-              </select>
-              <Icon name="chevron-down" size={13} />
-            </div>
+            <Select
+              ariaLabel="Folder"
+              value={parentId ?? ''}
+              disabled={folders.length === 0}
+              options={[
+                { value: '', label: 'Top level' },
+                ...folders.map((folder) => ({
+                  value: folder.id,
+                  label: folder.label,
+                  indent: folder.depth,
+                })),
+              ]}
+              onChange={(next) => setParentId(next || null)}
+            />
           </Field>
         ) : null}
       </div>

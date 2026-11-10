@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { HTTP_METHODS, type RequestSpec } from '../types';
 import { useStore } from '../state/store';
 import { buildUrlPreview } from '../lib/request';
+import { parseCurl } from '../lib/curl';
 import { environmentMap, resolveTemplate } from '../lib/variables';
 import { cx, emptyRow, methodClass } from '../lib/utils';
 import { Button, IconButton } from './ui/primitives';
@@ -9,6 +11,8 @@ import { Icon } from './ui/Icon';
 
 interface RequestBarProps {
   onOpenSave: () => void;
+  codeOpen: boolean;
+  onToggleCode: () => void;
 }
 
 function decodeSafe(value: string): string {
@@ -47,7 +51,94 @@ function absorbQuery(
   };
 }
 
-export function RequestBar({ onOpenSave }: RequestBarProps) {
+export function MethodPicker({
+  value,
+  onChange,
+}: {
+  value: RequestSpec['method'];
+  onChange: (method: RequestSpec['method']) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  const toggle = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const MENU_WIDTH = 156;
+    const left = Math.max(
+      16,
+      Math.min(rect.left, window.innerWidth - MENU_WIDTH - 16),
+    );
+    setAnchor({ left, top: rect.bottom + 10 });
+    setOpen(true);
+  };
+
+  return (
+    <>
+      <div
+        ref={buttonRef}
+        className={cx('method-picker', methodClass(value))}
+        role="button"
+        tabIndex={0}
+        aria-label="HTTP method"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={toggle}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggle();
+          }
+        }}
+      >
+        <span className="method-picker-label">{value}</span>
+        <Icon name="chevron-down" size={11} className="method-picker-chevron" />
+      </div>
+
+      {open && anchor
+        ? createPortal(
+            <>
+              <div className="menu-scrim" onMouseDown={() => setOpen(false)} />
+              <div
+                className="context-menu method-menu"
+                style={{ left: anchor.left, top: anchor.top }}
+                role="menu"
+              >
+                {HTTP_METHODS.map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    role="menuitem"
+                    className={cx(
+                      'context-item method-menu-item',
+                      method === value && 'is-active',
+                    )}
+                    onClick={() => {
+                      onChange(method);
+                      setOpen(false);
+                    }}
+                  >
+                    <span className={cx('method-menu-tag', `method-${method.toLowerCase()}`)}>
+                      {method}
+                    </span>
+                    {method === value ? <Icon name="check" size={13} /> : null}
+                  </button>
+                ))}
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+export function RequestBar({ onOpenSave, codeOpen, onToggleCode }: RequestBarProps) {
   const { actions, activeTab, activeEnvironment } = useStore();
 
   const missing = useMemo(() => {
@@ -89,22 +180,10 @@ export function RequestBar({ onOpenSave }: RequestBarProps) {
 
   return (
     <div className="request-bar">
-      <div className={cx('method-picker', methodClass(draft.method))}>
-        <select
-          value={draft.method}
-          aria-label="HTTP method"
-          onChange={(event) =>
-            patch({ method: event.target.value as RequestSpec['method'] })
-          }
-        >
-          {HTTP_METHODS.map((method) => (
-            <option key={method} value={method}>
-              {method}
-            </option>
-          ))}
-        </select>
-        <Icon name="chevron-down" size={11} className="method-picker-chevron" />
-      </div>
+      <MethodPicker
+        value={draft.method}
+        onChange={(method) => patch({ method })}
+      />
 
       <div className="url-field">
         <input
@@ -117,6 +196,30 @@ export function RequestBar({ onOpenSave }: RequestBarProps) {
           onChange={(event) => patch({ url: event.target.value })}
           onPaste={(event) => {
             const pasted = event.clipboardData.getData('text');
+            if (/^curl(\s|$)/i.test(pasted.trim())) {
+              const parsed = parseCurl(pasted);
+              if (parsed) {
+                event.preventDefault();
+                const basicAuth = parsed.auth.type === 'basic' ? parsed.auth : undefined;
+                patch({
+                  method: HTTP_METHODS.includes(parsed.method as (typeof HTTP_METHODS)[number])
+                    ? (parsed.method as RequestSpec['method'])
+                    : 'GET',
+                  url: parsed.url,
+                  params: parsed.params,
+                  headers: basicAuth
+                    ? parsed.headers.filter((header) => header.key.toLowerCase() !== 'authorization')
+                    : parsed.headers,
+                  bodyMode: parsed.bodyMode,
+                  body: parsed.body,
+                  formFields: parsed.formFields,
+                  auth: basicAuth
+                    ? { ...draft.auth, type: 'basic', username: basicAuth.username ?? '', password: basicAuth.password ?? '' }
+                    : draft.auth,
+                });
+                return;
+              }
+            }
             if (!pasted.includes('?')) return;
             const input = event.currentTarget;
             const start = input.selectionStart ?? draft.url.length;
@@ -174,6 +277,12 @@ export function RequestBar({ onOpenSave }: RequestBarProps) {
           label="Save request (Ctrl+S)"
           active={activeTab.dirty}
           onClick={onOpenSave}
+        />
+        <IconButton
+          icon="code"
+          label="Code snippets"
+          active={codeOpen}
+          onClick={onToggleCode}
         />
       </div>
     </div>

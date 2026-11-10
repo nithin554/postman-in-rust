@@ -150,6 +150,7 @@ interface ModalProps {
   icon?: IconName;
   width?: number;
   footer?: ReactNode;
+  modalClassName?: string;
   children: ReactNode;
 }
 
@@ -161,6 +162,7 @@ export function Modal({
   icon,
   width = 520,
   footer,
+  modalClassName,
   children,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -193,7 +195,7 @@ export function Modal({
       if (event.target === event.currentTarget) onClose();
     }}>
       <div
-        className="modal"
+        className={cx('modal', modalClassName)}
         role="dialog"
         aria-modal="true"
         aria-label={title}

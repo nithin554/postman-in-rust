@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import { ActivityRail } from './components/ActivityRail';
 import { RequestBar } from './components/RequestBar';
 import { RequestEditor } from './components/RequestEditor';
 import { RequestTabs } from './components/RequestTabs';
+import { CodePanel } from './components/CodePanel';
 import { ResponsePanel } from './components/ResponsePanel';
 import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
 import { CommandPalette } from './components/overlays/CommandPalette';
+import { ConfirmModal } from './components/ui/ConfirmModal';
 import { SaveRequestModal } from './components/overlays/SaveRequestModal';
 import { SettingsModal } from './components/overlays/SettingsModal';
 import { cx } from './lib/utils';
@@ -44,11 +46,82 @@ function BootSplash() {
   );
 }
 
+const SIDEBAR_STORAGE_KEY = 'courier.sidebarWidth';
+const SIDEBAR_MIN = 220;
+const SIDEBAR_MAX = 520;
+
+function applySavedSidebarWidth() {
+  try {
+    const saved = Number.parseInt(localStorage.getItem(SIDEBAR_STORAGE_KEY) ?? '', 10);
+    if (Number.isFinite(saved) && saved >= SIDEBAR_MIN && saved <= SIDEBAR_MAX) {
+      document.documentElement.style.setProperty('--sidebar-w', `${saved}px`);
+    }
+  } catch {
+    /* storage unavailable — keep CSS default */
+  }
+}
+
+function SidebarResizer() {
+  const [active, setActive] = useState(false);
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const sidebar = document.querySelector<HTMLElement>('.sidebar');
+    const startWidth = sidebar ? sidebar.offsetWidth : SIDEBAR_MIN;
+    const move = (moveEvent: PointerEvent) => {
+      const width = Math.min(
+        SIDEBAR_MAX,
+        Math.max(SIDEBAR_MIN, startWidth + moveEvent.clientX - startX),
+      );
+      document.documentElement.style.setProperty('--sidebar-w', `${Math.round(width)}px`);
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      setActive(false);
+      document.body.style.cursor = '';
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(Math.round(sidebar?.offsetWidth ?? startWidth)));
+      } catch {
+        /* ignore persistence errors */
+      }
+    };
+    setActive(true);
+    document.body.style.cursor = 'col-resize';
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+  };
+
+  const onDoubleClick = () => {
+    document.documentElement.style.removeProperty('--sidebar-w');
+    try {
+      localStorage.removeItem(SIDEBAR_STORAGE_KEY);
+    } catch {
+      /* ignore persistence errors */
+    }
+  };
+
+  return (
+    <div
+      className="sidebar-resizer"
+      data-active={active || undefined}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize sidebar"
+      title="Drag to resize · double-click to reset"
+      onPointerDown={onPointerDown}
+      onDoubleClick={onDoubleClick}
+    />
+  );
+}
+
 function AppShell() {
   const { state, actions, activeTab } = useStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
   const mainSplit = useDefaultLayout({ id: 'courier-main-split' });
 
   const latest = useRef({ state, actions, activeTab, settingsOpen, saveOpen, paletteOpen });
@@ -156,6 +229,10 @@ function AppShell() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  useEffect(() => {
+    applySavedSidebarWidth();
+  }, []);
+
   if (!state.ready) return <BootSplash />;
 
   return (
@@ -166,10 +243,15 @@ function AppShell() {
       />
 
       {state.sidebarOpen ? <Sidebar /> : null}
+      {state.sidebarOpen ? <SidebarResizer /> : null}
 
       <main className="main-panel">
-        <RequestTabs onOpenSave={() => setSaveOpen(true)} />
-        <RequestBar onOpenSave={() => setSaveOpen(true)} />
+        <RequestTabs />
+        <RequestBar
+          onOpenSave={() => setSaveOpen(true)}
+          codeOpen={codeOpen}
+          onToggleCode={() => setCodeOpen((value) => !value)}
+        />
 
         <div className="work-area">
           <Group
@@ -186,6 +268,7 @@ function AppShell() {
               <ResponsePanel />
             </Panel>
           </Group>
+          {codeOpen ? <CodePanel onClose={() => setCodeOpen(false)} /> : null}
         </div>
 
         <StatusBar />
@@ -193,6 +276,7 @@ function AppShell() {
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <SaveRequestModal open={saveOpen} tab={activeTab} onClose={() => setSaveOpen(false)} />
+      <ConfirmModal />
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
