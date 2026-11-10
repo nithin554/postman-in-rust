@@ -286,9 +286,16 @@ function CollectionsPanel({ query }: { query: string }) {
               (item) => item.id === target.collectionId,
             );
             if (!collection) return;
-            if (!window.confirm(`Delete “${collection.name}” and everything in it?`)) return;
-            actions.deleteCollection(collection.id);
-            notify({ title: 'Collection deleted', tone: 'info' });
+            actions.showConfirm({
+              title: 'Delete collection?',
+              tone: 'danger',
+              confirmLabel: 'Delete',
+              message: `“${collection.name}” and everything inside it (folders, requests, scripts) will be removed. This cannot be undone.`,
+              onConfirm: () => {
+                actions.deleteCollection(collection.id);
+                notify({ title: 'Collection deleted', tone: 'info' });
+              },
+            });
           },
         },
       ];
@@ -322,8 +329,13 @@ function CollectionsPanel({ query }: { query: string }) {
           icon: 'trash',
           danger: true,
           run: () => {
-            if (!window.confirm(`Delete the folder “${node.name}” and its requests?`)) return;
-            actions.deleteNode(collectionId, node.id);
+            actions.showConfirm({
+              title: 'Delete folder?',
+              tone: 'danger',
+              confirmLabel: 'Delete',
+              message: `The folder “${node.name}” and all requests inside it will be removed. This cannot be undone.`,
+              onConfirm: () => actions.deleteNode(collectionId, node.id),
+            });
           },
         },
       ];
@@ -350,9 +362,16 @@ function CollectionsPanel({ query }: { query: string }) {
         icon: 'trash',
         danger: true,
         run: () => {
-          if (!window.confirm(`Delete “${node.name}”?`)) return;
-          actions.deleteNode(collectionId, node.id);
-          notify({ title: 'Request deleted', tone: 'info' });
+          actions.showConfirm({
+            title: 'Delete request?',
+            tone: 'danger',
+            confirmLabel: 'Delete',
+            message: `“${node.name}” will be removed from this collection. This cannot be undone.`,
+            onConfirm: () => {
+              actions.deleteNode(collectionId, node.id);
+              notify({ title: 'Request deleted', tone: 'info' });
+            },
+          });
         },
       },
     ];
@@ -424,7 +443,7 @@ function CollectionsPanel({ query }: { query: string }) {
       >
         <span className="tree-chevron" />
         <span className={cx('method-tag', methodClass(node.request?.method ?? 'GET'))}>
-          {(node.request?.method ?? 'GET').slice(0, 3)}
+          {node.request?.method ?? 'GET'}
         </span>
         {editingId === node.id ? (
           <RenameInput
@@ -623,9 +642,16 @@ function HistoryPanel({ query }: { query: string }) {
           type="button"
           className="toolbar-button"
           onClick={() => {
-            if (!window.confirm('Clear the entire request history?')) return;
-            actions.clearHistory();
-            notify({ title: 'History cleared', tone: 'info' });
+            actions.showConfirm({
+              title: 'Clear history?',
+              tone: 'danger',
+              confirmLabel: 'Clear',
+              message: 'All history entries will be removed. Saved requests are not affected. This cannot be undone.',
+              onConfirm: () => {
+                actions.clearHistory();
+                notify({ title: 'History cleared', tone: 'info' });
+              },
+            });
           }}
         >
           <Icon name="trash" size={13} />
@@ -652,7 +678,7 @@ function HistoryPanel({ query }: { query: string }) {
                   }}
                 >
                   <span className={cx('method-tag', methodClass(entry.method))}>
-                    {entry.method.slice(0, 3)}
+                    {entry.method}
                   </span>
                   <div className="history-main">
                     <div className="history-url" title={entry.url}>

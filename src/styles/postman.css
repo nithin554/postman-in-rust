@@ -1,0 +1,380 @@
+/* ---------------------------------------------------------------------------
+   Postman skin — overrides on top of theme.css/app.css to make Courier look
+   like the Postman desktop app (light appearance, measured from Postman 12).
+--------------------------------------------------------------------------- */
+
+:root {
+  /* measured from Postman (light): Inter 12px, #f9f9f9 chrome, white body */
+  --ui-size: 12px;
+  --tabbar-h: 36px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+/* Light appearance = Postman light */
+[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-deep: #f9f9f9;
+  --panel: #f9f9f9;
+  --surface: #ffffff;
+  --surface-2: #f2f2f2;
+  --surface-3: #e6e6e6;
+  --rail-bg: #f9f9f9;
+  --sidebar-bg: #ffffff;
+  --border: #ededed;
+  --border-strong: #d5d5d5;
+  --border-soft: #f0f0f0;
+  --text: #212121;
+  --text-muted: #6b6b6b;
+  --text-subtle: #909090;
+  --overlay: rgba(33, 33, 33, 0.5);
+  --success: #0a8f6e;
+  --warning: #cc7a00;
+  --danger: #e54850;
+  --info: #0b76d5;
+  --m-get: #007b5f;
+  --m-post: #b56200;
+  --m-put: #b56200;
+  --m-patch: #8a6914;
+  --m-delete: #c7303a;
+  --m-head: #6b6b6b;
+  --m-options: #08737a;
+}
+
+/* Dark appearance = Postman dark */
+[data-theme='dark'] {
+  --bg: #2b2b2b;
+  --bg-deep: #1f1f1f;
+  --panel: #1f1f1f;
+  --surface: #323232;
+  --surface-2: #3a3a3a;
+  --surface-3: #444444;
+  --surface-glass: rgba(31, 31, 31, 0.85);
+  --rail-bg: #1a1a1a;
+  --sidebar-bg: #2b2b2b;
+  --border: #3d3d3d;
+  --border-strong: #4d4d4d;
+  --border-soft: #333333;
+  --text: #e0e0e0;
+  --text-muted: #9e9e9e;
+  --text-subtle: #7a7a7a;
+  --m-get: #38c793;
+  --m-post: #f5a623;
+  --m-put: #ff8a3d;
+  --m-patch: #e9a944;
+  --m-delete: #ee5253;
+  --m-head: #94a3b8;
+  --m-options: #2dd4bf;
+}
+
+/* Postman blue Send button (measured rgb(58,130,230), 32px, 13px/500) */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 32px;
+  padding: 0 16px;
+}
+
+.btn-primary:hover {
+  background: #2d6ed3;
+  color: var(--accent-contrast);
+}
+
+[data-theme='dark'] .btn-primary:hover {
+  background: #2d6ed3;
+}
+
+/* Postman section tabs (Params/Headers/Body/Auth): quiet flat pills */
+.editor-tab,
+.editor-tabs button {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.editor-tab:hover,
+.editor-tabs button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.editor-tab.is-active,
+.editor-tabs button.is-active {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- chrome / header strip ---- */
+.tabs-bar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---- request tabs (Postman tab strip) ---- */
+.tabs-bar {
+  height: var(--tabbar-h);
+  font-size: var(--ui-size);
+}
+
+.tabs-scroll {
+  padding: 0 4px;
+}
+
+.tab {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  gap: 6px;
+  padding: 0 10px;
+  margin: 3px 1px 0;
+  line-height: calc(var(--tabbar-h) - 3px);
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.tab:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+[data-theme='dark'] .tab:hover {
+  background: var(--surface-2);
+}
+
+.tab.is-active {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+  position: relative;
+}
+
+.tab.is-active::after {
+  content: none;
+}
+
+.tab.is-active .tab-close {
+  opacity: 0.6;
+}
+
+.tab-method {
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.tab-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.tab-add {
+  border-radius: var(--radius-sm);
+  margin: 5px 2px;
+}
+
+/* ---- left rail ---- */
+.rail {
+  border-right: 1px solid var(--border);
+}
+
+.rail-button {
+  border-radius: var(--radius-sm);
+}
+
+.rail-button:hover {
+  background: var(--surface-3);
+}
+
+[data-theme='dark'] .rail-button:hover {
+  background: var(--surface-2);
+}
+
+/* ---- sidebar ---- */
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+}
+
+.tree-row {
+  border-radius: var(--radius-sm);
+}
+
+.tree-row:hover {
+  background: var(--surface-2);
+}
+
+.tree-row.is-selected {
+  background: var(--surface-3);
+}
+
+[data-theme='dark'] .tree-row:hover {
+  background: var(--surface-2);
+}
+
+.collection-name {
+  font-weight: 500;
+}
+
+/* ---- request bar: method pill + URL field + Send (Postman orange) ---- */
+.request-bar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+}
+
+.method-picker {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.url-field {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  min-height: 30px;
+}
+
+.url-field:focus-within {
+  border-color: var(--accent);
+}
+
+.url-input {
+  font-size: 12px;
+}
+
+/* Postman has no resolved-URL line under the request bar */
+.url-meta {
+  display: none;
+}
+
+/* inputs/buttons: flatter, 6px */
+.text-input,
+button,
+.btn,
+.select,
+.dropdown {
+  border-radius: var(--radius-sm);
+}
+
+/* ---- response panel ---- */
+.response,
+.pane {
+  background: var(--bg);
+}
+
+/* status colors like Postman: 2xx green / 3xx amber / 4xx amber-red / 5xx red */
+.status-code { border-radius: var(--radius-xs); font-weight: 600; }
+.status-2xx { color: var(--success); }
+.status-3xx { color: var(--warning); }
+.status-4xx { color: var(--danger); }
+.status-5xx { color: var(--danger); }
+
+/* ---- status bar bottom ---- */
+.status-bar {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+}
+
+/* editor: 12px */
+.editor, .cm-editor, [class*='code-mirror'] {
+  font-size: 12px;
+}
+
+/* Postman keeps the request/response panes flat — a single divider between
+   the request editor and the response, no boxed outline around either. */
+.editor,
+.response {
+  border: none;
+  border-radius: 0;
+  background: var(--bg);
+}
+
+.response {
+  border-top: 1px solid var(--border);
+}
+
+.editor-tabs {
+  background: var(--bg);
+  gap: 10px;
+}
+
+/* Postman-style failure card: soft red panel instead of a plain empty state */
+.response-error {
+  align-self: stretch;
+  margin: 24px auto;
+  max-width: 520px;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  background: color-mix(in srgb, var(--danger) 6%, var(--bg));
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+}
+
+.response-error h3 {
+  color: var(--danger);
+}
+
+.response-error-message {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+/* ---- modals: flat Postman dialogs (no glass/blur) ---- */
+.modal-backdrop {
+  backdrop-filter: none;
+}
+
+.modal {
+  border-radius: 8px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.16),
+    0 16px 48px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme='dark'] .modal {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  padding: 12px 16px 10px;
+}
+
+.modal-heading h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.modal-heading p {
+  font-size: 12px;
+}
+
+.modal-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+}
+
+.modal-body {
+  padding: 14px 16px;
+}
+
+.modal-footer {
+  padding: 10px 16px 12px;
+}

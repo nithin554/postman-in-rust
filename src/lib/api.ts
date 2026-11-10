@@ -69,6 +69,17 @@ export async function clearCookies(): Promise<void> {
   await invoke('clear_cookies');
 }
 
+export interface Oauth2Input {
+  tokenUrl: string;
+  clientId: string;
+  clientSecret: string;
+  scope?: string;
+}
+
+export async function oauth2Token(input: Oauth2Input): Promise<string> {
+  return invoke<string>('oauth2_token', { input });
+}
+
 export async function importJsonFile(): Promise<ImportedFile | null> {
   if (IS_TAURI) {
     return invoke<ImportedFile | null>('import_json_file');

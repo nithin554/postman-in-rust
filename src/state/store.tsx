@@ -26,15 +26,26 @@ import { DEFAULT_SETTINGS } from '../types';
 import {
   cancelRequest,
   loadWorkspace,
+  oauth2Token,
   saveWorkspace,
   sendRequest,
 } from '../lib/api';
 import { createEmptyRequest, prepareRequest } from '../lib/request';
+import { runPreRequest, runTests } from '../lib/scripts';
 import { createSampleWorkspace } from '../lib/sampleWorkspace';
 import { duplicateNodeDeep, findNode, insertNode, removeNode, updateNode } from '../lib/tree';
 import { deriveRequestName, uid } from '../lib/utils';
+import { environmentMap, resolveTemplate } from '../lib/variables';
 import type { ImportResult } from '../lib/postman';
 import { useToast } from './toasts';
+
+export interface ConfirmRequest {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  tone?: 'default' | 'danger';
+  onConfirm: () => void;
+}
 
 export interface StoreState {
   ready: boolean;
@@ -48,6 +59,7 @@ export interface StoreState {
   sidebar: SidebarSection;
   sidebarOpen: boolean;
   selected: SavedRef | null;
+  confirmDialog: ConfirmRequest | null;
 }
 
 export type Action =
@@ -79,7 +91,9 @@ export type Action =
   | { type: 'removeHistory'; id: string }
   | { type: 'clearHistory' }
   | { type: 'updateSettings'; patch: Partial<Settings> }
-  | { type: 'applyImport'; result: ImportResult };
+  | { type: 'applyImport'; result: ImportResult }
+  | { type: 'confirmShow'; request: ConfirmRequest }
+  | { type: 'confirmHide' };
 
 const EMPTY_STATE: StoreState = {
   ready: false,
@@ -93,6 +107,7 @@ const EMPTY_STATE: StoreState = {
   sidebar: 'collections',
   sidebarOpen: true,
   selected: null,
+  confirmDialog: null,
 };
 
 function newTab(
@@ -111,6 +126,7 @@ function newTab(
     startedAt: null,
     response: null,
     error: null,
+    tests: null,
   };
 }
 
@@ -136,6 +152,7 @@ function hydrate(workspace: WorkspaceFile): StoreState {
     settings: { ...DEFAULT_SETTINGS, ...workspace.settings },
     tabs,
     activeTabId,
+    confirmDialog: null,
   };
 }
 
@@ -227,6 +244,7 @@ export function reducer(state: StoreState, action: Action): StoreState {
                 startedAt: Date.now(),
                 response: null,
                 error: null,
+                tests: null,
               }
             : tab,
         ),
@@ -404,6 +422,12 @@ export function reducer(state: StoreState, action: Action): StoreState {
       }
       return hydrate(action.result.workspace);
 
+    case 'confirmShow':
+      return { ...state, confirmDialog: action.request };
+
+    case 'confirmHide':
+      return { ...state, confirmDialog: null };
+
     default:
       return state;
   }
@@ -446,6 +470,8 @@ export interface StoreActions {
   applyImport: (result: ImportResult) => void;
   setSidebar: (section: SidebarSection) => void;
   toggleSidebar: () => void;
+  showConfirm: (request: ConfirmRequest) => void;
+  hideConfirm: () => void;
 }
 
 interface StoreContextValue {
@@ -575,9 +601,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const tab = state.tabs.find((candidate) => candidate.id === id);
       if (!tab || tab.sending) return;
 
+      let scriptEnv = activeEnvironment;
+      const preLogs: string[] = [];
+
+      if (tab.draft.preRequestScript?.trim()) {
+        const outcome = runPreRequest(tab.draft.preRequestScript, activeEnvironment);
+        preLogs.push(...outcome.logs);
+        if (scriptEnv && outcome.changed) {
+          const nextEnv = { ...scriptEnv, variables: outcome.envPatch };
+          dispatch({ type: 'updateEnvironment', id: scriptEnv.id, patch: nextEnv });
+        }
+      }
+
       const prepared = prepareRequest(
         tab.draft,
-        activeEnvironment,
+        scriptEnv,
         state.settings,
         id,
       );
@@ -595,6 +633,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             .join(', ')} will be sent literally.`,
           tone: 'warning',
         });
+      }
+
+      if (tab.draft.auth.type === 'oauth2') {
+        const auth = tab.draft.auth;
+        if (!auth.tokenUrl || !auth.clientId) {
+          notify({
+            title: 'OAuth 2 is incomplete',
+            description: 'Fill in the token URL and client credentials in the Auth tab.',
+            tone: 'warning',
+          });
+          return;
+        }
+        try {
+          const variables = environmentMap(scriptEnv);
+          const token = await oauth2Token({
+            tokenUrl: resolveTemplate(auth.tokenUrl, variables).value,
+            clientId: resolveTemplate(auth.clientId ?? '', variables).value,
+            clientSecret: resolveTemplate(auth.clientSecret ?? '', variables).value,
+            scope: resolveTemplate(auth.scope ?? '', variables).value || undefined,
+          });
+          prepared.input.headers.push({
+            key: 'Authorization',
+            value: `Bearer ${token}`,
+            enabled: true,
+          });
+        } catch (error) {
+          notify({
+            title: 'Could not get an OAuth 2 token',
+            description: String(error),
+            tone: 'error',
+          });
+          return;
+        }
       }
 
       dispatch({ type: 'beginSend', id });
@@ -616,6 +687,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             environmentName: activeEnvironment?.name,
           },
         });
+
+        if (tab.draft.testScript?.trim()) {
+          const outcome = await runTests(tab.draft.testScript, response);
+          outcome.logs.unshift(...preLogs);
+          dispatch({
+            type: 'patchTab',
+            id,
+            patch: {
+              tests: {
+                results: outcome.results,
+                logs: outcome.logs,
+                at: Date.now(),
+              },
+            },
+          });
+        } else if (preLogs.length > 0) {
+          dispatch({
+            type: 'patchTab',
+            id,
+            patch: { tests: { results: [], logs: preLogs, at: Date.now() } },
+          });
+        }
       } catch (error) {
         const message = errorMessage(error);
         dispatch({ type: 'failSend', id, error: message });
@@ -815,6 +908,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSidebar: (section) => dispatch({ type: 'sidebar', section }),
 
       toggleSidebar: () => dispatch({ type: 'toggleSidebar' }),
+      showConfirm: (request) => dispatch({ type: 'confirmShow', request }),
+      hideConfirm: () => dispatch({ type: 'confirmHide' }),
     };
   }, [state, activeEnvironment, notify, openRequest]);
 

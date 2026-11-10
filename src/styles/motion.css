@@ -1,0 +1,249 @@
+/* ---------------------------------------------------------------------------
+   Courier — motion layer (transitions.dev-style recipes)
+   Motion tokens + named-property transitions + reduced-motion guard.
+   Only animates opacity / transform / paint-cheap properties.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* Motion tokens */
+  --duration-quick: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-swift: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---- Shared keyframes (override earlier definitions) --------------------- */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal open/close — scale + rise + settle */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Toast — rises in with fade and settle */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Origin-aware menu open */
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.94) translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+/* Panel reveal — subtle rise for content blocks */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Buttons: named properties, press feedback --------------------------- */
+
+.btn,
+.tab,
+.tab-add,
+.tab-close,
+.toast-close,
+.kv-add,
+.swatch {
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out),
+    box-shadow var(--duration-quick) var(--ease-out);
+}
+
+.btn {
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out),
+    box-shadow var(--duration-quick) var(--ease-out),
+    transform var(--duration-quick) var(--ease-out);
+}
+
+.btn:not(:disabled):active {
+  transform: scale(0.98);
+  transition-duration: 60ms;
+}
+
+/* ---- Inputs: focus ring eases in ----------------------------------------- */
+
+.text-input input,
+.text-input textarea,
+.script-textarea,
+.field input,
+.field select,
+body input[type='text'],
+body input[type='number'],
+body input[type='password'] {
+  transition:
+    border-color var(--duration-quick) var(--ease-out),
+    box-shadow var(--duration-quick) var(--ease-out),
+    background-color var(--duration-quick) var(--ease-out);
+}
+
+/* ---- Rows: sidebar / history / lists ------------------------------------- */
+
+.sidebar-row,
+.history-row,
+.collection-row,
+.context-item,
+.kv-row {
+  transition: background-color var(--duration-quick) var(--ease-out);
+}
+
+/* ---- Toggle: thumb slides with spring ------------------------------------ */
+
+.switch-thumb {
+  transition:
+    transform var(--duration-slow) var(--ease-spring),
+    background-color var(--duration-quick) var(--ease-out);
+}
+
+.switch {
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out);
+}
+
+/* ---- Checkbox: pop on check ---------------------------------------------- */
+
+.kv-check input:checked {
+  animation: check-pop var(--duration-base) var(--ease-spring);
+}
+
+@keyframes check-pop {
+  0% { transform: scale(0.8); }
+  60% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* ---- Menus / popovers: origin-aware -------------------------------------- */
+
+.context-menu {
+  transform-origin: top left;
+  animation: menu-in var(--duration-base) var(--ease-out);
+}
+
+/* ---- Modals: backdrop fades, surface settles ----------------------------- */
+
+.modal-backdrop {
+  animation: fade-in var(--duration-base) var(--ease-out);
+}
+
+.modal {
+  animation: pop-in var(--duration-slow) var(--ease-out);
+}
+
+/* ---- Toasts --------------------------------------------------------------- */
+
+.toast {
+  animation: toast-in var(--duration-base) var(--ease-out);
+}
+
+/* ---- Tab strip: color settles, active underline --------------------------- */
+
+.tab {
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out);
+}
+
+.tab.is-active::after {
+  animation: tab-underline var(--duration-base) var(--ease-out);
+}
+
+@keyframes tab-underline {
+  from { transform: scaleX(0.4); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+/* ---- Swatches / accent picker --------------------------------------------- */
+
+.swatch {
+  transition:
+    transform var(--duration-quick) var(--ease-spring),
+    box-shadow var(--duration-quick) var(--ease-out);
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+}
+
+.swatch.is-active {
+  animation: check-pop var(--duration-base) var(--ease-spring);
+}
+
+/* ---- Segmented controls / pills ------------------------------------------- */
+
+.segmented button,
+.pill {
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out);
+}
+
+.segmented button.is-active {
+  animation: fade-in var(--duration-quick) var(--ease-out);
+}
+
+/* ---- Empty states and reveals --------------------------------------------- */
+
+.empty-state {
+  animation: rise-in var(--duration-slow) var(--ease-out);
+}
+
+.test-results {
+  animation: rise-in var(--duration-base) var(--ease-out);
+}
+
+/* ---- Reduced motion: honor the OS setting --------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

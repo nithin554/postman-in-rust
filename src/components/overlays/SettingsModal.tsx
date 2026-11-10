@@ -20,11 +20,11 @@ const THEMES: { id: ThemeMode; label: string; icon: IconName }[] = [
 ];
 
 const ACCENTS: { id: AccentId; label: string; color: string }[] = [
-  { id: 'ember', label: 'Ember', color: '#ff8a3d' },
+  { id: 'azure', label: 'Azure', color: '#3a82e6' },
+  { id: 'ember', label: 'Ember', color: '#ff6c37' },
   { id: 'violet', label: 'Violet', color: '#a78bfa' },
   { id: 'teal', label: 'Teal', color: '#2dd4bf' },
   { id: 'rose', label: 'Rose', color: '#fb7185' },
-  { id: 'azure', label: 'Azure', color: '#60a5fa' },
 ];
 
 const FONT_SIZES: { id: FontSize; label: string }[] = [
@@ -88,9 +88,17 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
   };
 
   const restoreSample = () => {
-    if (!window.confirm('Replace the current workspace with the sample workspace?')) return;
-    actions.applyImport({ kind: 'workspace', workspace: createSampleWorkspace() });
-    onClose();
+    actions.showConfirm({
+      title: 'Replace workspace with samples?',
+      tone: 'danger',
+      confirmLabel: 'Replace',
+      message:
+        'The current workspace will be replaced with the sample workspace. Your collections, environments, and history will be lost. This cannot be undone.',
+      onConfirm: () => {
+        actions.applyImport({ kind: 'workspace', workspace: createSampleWorkspace() });
+        onClose();
+      },
+    });
   };
 
   const handleClearCookies = async () => {
@@ -135,7 +143,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 <button
                   key={theme.id}
                   type="button"
-                  className={settings.theme === theme.id ? 'is-active' : undefined}
+                  className={settings.theme === theme.id ? 'segmented-item is-active' : 'segmented-item'}
                   onClick={() => actions.updateSettings({ theme: theme.id })}
                 >
                   <Icon name={theme.icon} size={14} />
@@ -161,7 +169,6 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                   title={accent.label}
                   onClick={() => actions.updateSettings({ accent: accent.id })}
                 >
-                  {settings.accent === accent.id ? <Icon name="check" size={12} /> : null}
                 </button>
               ))}
             </div>
@@ -177,7 +184,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                 <button
                   key={size.id}
                   type="button"
-                  className={settings.fontSize === size.id ? 'is-active' : undefined}
+                  className={settings.fontSize === size.id ? 'segmented-item is-active' : 'segmented-item'}
                   onClick={() => actions.updateSettings({ fontSize: size.id })}
                 >
                   {size.label}
